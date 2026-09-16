@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="Week1.vcxproj" />
+  <Project Path="Week1.vcxproj" Id="45f8f792-6188-46c2-b742-28b26cb9eda0" />
 </Solution>

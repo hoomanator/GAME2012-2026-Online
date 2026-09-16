@@ -47,13 +47,13 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glClearColor(0.0f, 0.5f, 0.0f, 1.0);
+        glClearColor(1.0f, 1.0f, 0.0f, 1.0);
 
 
-		float x = randomFloat(0.0f, SCREEN_WIDTH);
-		float y = randomFloat(0.0f, SCREEN_HEIGHT);
+		//float x = randomFloat(0.0f, SCREEN_WIDTH);
+		//float y = randomFloat(0.0f, SCREEN_HEIGHT);
 
-        glfwSetCursorPos(window, x, y);
+        //glfwSetCursorPos(window, x, y);
 
 
         /* Swap front and back buffers */
