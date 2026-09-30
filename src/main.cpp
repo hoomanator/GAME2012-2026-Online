@@ -158,34 +158,112 @@ int main()
             glBindVertexArray(vertex_array_white);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
-
-
             break;
         case 1:
 			glPointSize(10);
             glUseProgram(a1_tri_shader);
+            world = MatrixIdentity();
+			mvp = world * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vertex_array_white);
             glDrawArrays(GL_POINTS, 0, 3);
             break;
         case 2:
             glUseProgram(a1_tri_shader);
+            world = MatrixScale(2.f, 2.f, 2.f);
+            mvp = world * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-            glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_LINE_LOOP, 0, 3);
+            glBindVertexArray(vertex_array_rainbow);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
         case 3:
+        {
             glUseProgram(a1_tri_shader);
+
+			float time = Time();
+			float a = cosf(time) * 0.5f + 0.5f;
+            Vector3 A = { -10.0f, 10.0f, 0.0f };
+            Vector3 B = { 10.0f, -10.0f, 0.0f };
+			Vector3 C = Vector3Lerp(A, B, a);
+
+			Matrix s = MatrixScale(2.f, 2.f, 2.f);
+			Matrix r = MatrixRotateZ(0.0f * DEG2RAD);
+            Matrix t = MatrixTranslate(C.x, C.y, C.z);
+
+			Matrix world = s * r * t;
+			Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+			Matrix proj = MatrixOrtho(-10.f, 10.f, -10.f, 10.f, 0.1f, 100.f);
+			Matrix mvp = world * view * proj;
+
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
+            glBindVertexArray(vertex_array_rainbow);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+            Vector3 A1 = { -10.0f, -10.0f, 0.0f };
+            Vector3 B1 = { 10.0f, 10.0f, 0.0f };
+            Vector3 C1 = Vector3Lerp(A1, B1, a);
+
+            Matrix s1 = MatrixScale(2.f, 2.f, 2.f);
+            Matrix r1 = MatrixRotateZ(0.0f * DEG2RAD);
+            Matrix t1 = MatrixTranslate(C1.x, C1.y, C1.z);
+
+            Matrix world1 = s1 * r1 * t1;
+            Matrix view1 = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+            Matrix proj1 = MatrixOrtho(-10.f, 10.f, -10.f, 10.f, 0.1f, 100.f);
+            Matrix mvp1 = world1 * view1 * proj1;
+
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp1));
+
+            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
+            glBindVertexArray(vertex_array_rainbow);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            break;
+        }
+        case 4:
+        {
+
+            glUseProgram(a1_tri_shader);
+
+            Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+            Matrix proj = MatrixOrtho(-10.f, 10.f, -10.f, 10.f, 0.1f, 100.f);
+
+            float time = Time();
+            float a = cosf(time) * 0.5f + 0.5f;
+
+            //Translation Interpolation
+            Vector3 tA = { -10.0f, 10.0f, 0.0f };
+            Vector3 tB = { 10.0f, -10.0f, 0.0f };
+            Vector3 tC = Vector3Lerp(tA, tB, a);
+
+			Vector3 sA = { 1.0f, 1.0f, 1.0f };
+            Vector3 sB = { 5.0f, 5.0f, 1.0f };
+            Vector3 sC = Vector3Lerp(sA, sB, a);
+
+			Quaternion qA = QuaternionIdentity();
+			Quaternion qB = QuaternionFromEuler( 0.0f, 0.0f, 180.0f * DEG2RAD);   
+			Quaternion qC = QuaternionSlerp(qA, qB, a);
+
+			Matrix s = MatrixScale(sC.x, sC.y, sC.z);
+			Matrix r = QuaternionToMatrix(qC);
+            Matrix t = MatrixTranslate(tC.x, tC.y, tC.z);
+
+            Matrix world = s * r * t;
+            Matrix mvp = world * view * proj;
+
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+         
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vertex_array_rainbow);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
-        case 4:
-            glUseProgram(a1_tri_shader);
-            glUniform3f(u_color, 1.0f, 0.0f, 0.0f);
-            glBindVertexArray(vertex_array_rainbow);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            break;
+        }
         default:
             break;
         }
