@@ -32,7 +32,7 @@ static const Vector3 vertex_colors[3] =
 
 int main()
 {
-    CreateWindow(800, 800, "Graphics 1");
+    CreateWindow(800, 800, "Week 4");
 
     GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
     GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
@@ -90,6 +90,19 @@ int main()
     int object_index = 0;
 
     GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
+	GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+
+	float aspect = (float)WindowWidth() / (float)WindowHeight();
+	float near = 0.1f;
+	float far = 100.0f;
+    
+	Matrix proj = MatrixPerspective(75.f * DEG2RAD, aspect, near, far);
+	Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+
+	Matrix world = MatrixScale(1.f, 1.f, 1.f) * MatrixRotateZ(0.0f * DEG2RAD) * MatrixTranslate(0.f, 0.f, 0.f);
+    //world = MatrixIdentity();
+
+	Matrix mvp = proj * view * world;
 
 
     while (!WindowShouldClose())
@@ -116,9 +129,37 @@ int main()
         {
         case 0:
             glUseProgram(a1_tri_shader);
-            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
+
+			world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
+			mvp = world * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 1.0f, 0.0f, 0.0f);
             glBindVertexArray(vertex_array_white);
             glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(-5.f, 5.f, 0.f);
+            mvp = world * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
+            glBindVertexArray(vertex_array_white);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(-5.f, -5.f, 0.f);
+            mvp = world * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 0.0f, 0.0f, 1.0f);
+            glBindVertexArray(vertex_array_white);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, -5.f, 0.f);
+            mvp = world * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 1.0f, 1.0f, 0.0f);
+            glBindVertexArray(vertex_array_white);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+
             break;
         case 1:
 			glPointSize(10);

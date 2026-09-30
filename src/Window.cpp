@@ -145,3 +145,22 @@ void DestroyWindow()
 {
     glfwTerminate();
 }
+
+int WindowWidth()
+{
+	int width, height;
+	glfwGetWindowSize(gApp.window, &width, &height);
+	return width;
+}
+
+int WindowHeight()
+{
+	int width, height;
+	glfwGetWindowSize(gApp.window, &width, &height);
+	return height;
+}
+
+float Time()
+{
+	return (float)glfwGetTime();
+}
