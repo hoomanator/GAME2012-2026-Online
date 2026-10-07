@@ -1,5 +1,6 @@
 #include "Window.h"
 #include "Shader.h"
+#include "imgui/imgui.h"
 #include "raymath.h"
 #include <cstddef>
 
@@ -32,7 +33,7 @@ static const Vector3 vertex_colors[3] =
 
 int main()
 {
-    CreateWindow(800, 800, "Week 4");
+    CreateWindow(800, 800, "Week 5");
 
     GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
     GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
@@ -118,7 +119,7 @@ int main()
 
         /* Render here */
         glClearColor(r, g, b, a);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (IsKeyPressed(KEY_SPACE))
         {
@@ -268,6 +269,10 @@ int main()
             break;
         }
 
+
+		BeginGui();
+		ImGui::ShowDemoWindow(nullptr);
+		EndGui();
 
         Loop();
     }

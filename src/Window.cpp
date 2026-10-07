@@ -2,9 +2,17 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include "Window.h"
+
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+
+
 #include <cassert>
 #include <iostream>
 #include <memory>
+
 
 struct App
 {
@@ -99,6 +107,34 @@ void CreateWindow(int width, int height, const char* title)
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugCallback, nullptr);
 #endif
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsLight();
+
+    ImGui_ImplGlfw_InitForOpenGL(gApp.window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
+
+    glEnable(GL_DEPTH_TEST);
+
+}
+
+void BeginGui() {
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+
+void EndGui() {
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 void SetWindowShouldClose(bool close)
@@ -143,6 +179,10 @@ bool IsKeyPressed(int key)
 
 void DestroyWindow()
 {
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
 }
 
