@@ -31,6 +31,12 @@ static const Vector3 vertex_colors[3] =
     { 0.0f, 0.0f, 1.0f }
 };
 
+enum ProjectionType : int
+{
+	PERSPECTIVE = 0,
+	ORTHOGRAPHIC = 1    
+};
+
 int main()
 {
     CreateWindow(800, 800, "Week 5");
@@ -90,20 +96,27 @@ int main()
 
     int object_index = 0;
 
+
+	int projection_type = PERSPECTIVE;
+
+
     GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
 	GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
 
 	float aspect = (float)WindowWidth() / (float)WindowHeight();
 	float near = 0.1f;
 	float far = 100.0f;
+	float fov = 75.0f * DEG2RAD;
+
+    float left = -1.0;
+	float right = 1.0;
+	float bottom = -1.0;
+	float top = 1.0;
+
+    bool obj_translate = false;
+	bool obj_rotate = false;
+	bool obj_scale = false;
     
-	Matrix proj = MatrixPerspective(75.f * DEG2RAD, aspect, near, far);
-	Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
-
-	Matrix world = MatrixScale(1.f, 1.f, 1.f) * MatrixRotateZ(0.0f * DEG2RAD) * MatrixTranslate(0.f, 0.f, 0.f);
-    //world = MatrixIdentity();
-
-	Matrix mvp = proj * view * world;
 
 
     while (!WindowShouldClose())
@@ -126,38 +139,53 @@ int main()
             ++object_index %= 5;
         }
 
+		float tt = Time();
+
+		Matrix world = MatrixIdentity();
+
+		if (obj_translate)
+		{
+			world = MatrixTranslate(cosf(tt) * 0.4f + 0.5f, sin(tt) * 0.4f + 0.5f, 1.f);
+		}
+
+		if (obj_rotate)
+		{
+			world = MatrixRotateZ(tt * 100 * DEG2RAD);
+		}
+
+        if (obj_scale)
+        {
+			world = MatrixScale(cosf(tt) * 0.4f + 0.5f, cosf(tt) * 0.4f + 0.5f, 1.f);
+        }
+
+		Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, Vector3UnitY);
+
+		Matrix proj = MatrixIdentity();
+
+		switch (projection_type)
+		{
+		case PERSPECTIVE:
+			proj = MatrixPerspective(fov, aspect, near, far);
+			break;
+		case ORTHOGRAPHIC:
+			proj = MatrixOrtho(left, right, bottom, top, near, far);
+            break;
+		}
+
+
+        Matrix mvp = world * view * proj;
+
         switch (object_index)
         {
         case 0:
             glUseProgram(a1_tri_shader);
 
-			world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
-			mvp = world * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 1.0f, 0.0f, 0.0f);
-            glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(-5.f, 5.f, 0.f);
+			//world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
             mvp = world * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
             glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(-5.f, -5.f, 0.f);
-            mvp = world * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 0.0f, 0.0f, 1.0f);
-            glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, -5.f, 0.f);
-            mvp = world * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 1.0f, 1.0f, 0.0f);
-            glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glDrawArrays(GL_TRIANGLES, 0, 3);           
 
             break;
         case 1:
@@ -269,9 +297,27 @@ int main()
             break;
         }
 
-
+     
 		BeginGui();
-		ImGui::ShowDemoWindow(nullptr);
+        //ImGui::Begin("Hello, world!");
+        ImGui::Text("This is some useful text.");
+		ImGui::RadioButton("Perspective", &projection_type, PERSPECTIVE); ImGui::SameLine();
+		ImGui::RadioButton("Orthographic", &projection_type, ORTHOGRAPHIC);
+
+		ImGui::Checkbox("Translate", &obj_translate); 
+		ImGui::Checkbox("Rotate", &obj_rotate); 
+		ImGui::Checkbox("Scale", &obj_scale);
+
+        ImGui::SliderFloat("Left", &left, -10.0f, 10.0f);
+        ImGui::SliderFloat("Right", &right, -10.0f, 10.0f);     
+        ImGui::SliderFloat("Bottom", &bottom, -10.0f, 10.0f);
+        ImGui::SliderFloat("Top", &top, -10.0f, 10.0f);
+
+		ImGui::SliderFloat("Near", &near, 0.1f, 10.0f);
+		ImGui::SliderFloat("Far", &far, 10.0f, 100.0f);
+		ImGui::SliderAngle("FOV", &fov, 1.0f, 179.0f);  
+
+		//ImGui::ShowDemoWindow(nullptr);
 		EndGui();
 
         Loop();
