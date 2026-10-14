@@ -4,6 +4,9 @@
 #include "raymath.h"
 #include <cstddef>
 
+constexpr int SCREEN_WIDTH = 800;
+constexpr int SCREEN_HEIGHT = 800;
+
 struct Vertex
 {
     Vector2 pos;   // offset of 0
@@ -31,6 +34,33 @@ static const Vector3 vertex_colors[3] =
     { 0.0f, 0.0f, 1.0f }
 };
 
+
+// My first square! Make sure the direction is CCW
+static const int line_vertex_count = 8;
+static const Vector2 line_vertex_positions[line_vertex_count] =
+{
+	{ -1.0f, -1.0f }, //bottom left
+	{  1.0f, -1.0f }, //bottom right
+
+	{  1.0f,  -1.0f }, //bottom right
+	{ 1.0f,  1.0f }, //top right
+
+	{ 1.0f,  1.0f }, //top right
+	{ -1.0f, 1.0f }, //top left
+
+	{  -1.0f,  1.0f }, //top left
+	{ -1.0f,  -1.0f },  //bottom left
+
+};
+
+struct Line
+{
+    Vector2 start;
+	Vector2 end;
+};
+
+
+
 enum ProjectionType : int
 {
 	PERSPECTIVE = 0,
@@ -39,7 +69,25 @@ enum ProjectionType : int
 
 int main()
 {
-    CreateWindow(800, 800, "Week 5");
+    
+    Vector2 line_vertex_positions2[8];
+	line_vertex_positions2[0] = Vector2Lerp(line_vertex_positions[0], line_vertex_positions[1], 0.5f);
+    line_vertex_positions2[1] = Vector2Lerp(line_vertex_positions[2], line_vertex_positions[3], 0.5f);
+
+    line_vertex_positions2[2] = Vector2Lerp(line_vertex_positions[2], line_vertex_positions[3], 0.5f);
+    line_vertex_positions2[3] = Vector2Lerp(line_vertex_positions[4], line_vertex_positions[5], 0.5f);
+
+    line_vertex_positions2[4] = Vector2Lerp(line_vertex_positions[4], line_vertex_positions[5], 0.5f);
+    line_vertex_positions2[5] = Vector2Lerp(line_vertex_positions[6], line_vertex_positions[7], 0.5f);
+
+    line_vertex_positions2[6] = Vector2Lerp(line_vertex_positions[6], line_vertex_positions[7], 0.5f);
+    line_vertex_positions2[7] = Vector2Lerp(line_vertex_positions[0], line_vertex_positions[1], 0.5f);
+
+    
+    
+    
+    
+    CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 6");
 
     GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
     GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
@@ -94,6 +142,28 @@ int main()
 
     glBindVertexArray(GL_NONE);
 
+
+
+    GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
+    GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
+    GLuint a2_lines_shader = CreateProgram(a2_lines_vert, a2_lines_frag);
+
+    GLuint vbo_line_positions;
+    glGenBuffers(1, &vbo_line_positions);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_line_positions);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex_positions), line_vertex_positions, GL_STATIC_DRAW);
+  
+
+    GLuint vao_line;
+    glGenVertexArrays(1, &vao_line);
+    glBindVertexArray(vao_line);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2),0);
+    glBindVertexArray(GL_NONE);
+    glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+
+
     int object_index = 0;
 
 
@@ -136,7 +206,7 @@ int main()
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            ++object_index %= 5;
+            ++object_index %= 6;
         }
 
 		float tt = Time();
@@ -178,6 +248,22 @@ int main()
         switch (object_index)
         {
         case 0:
+        {
+            glUseProgram(a2_lines_shader);
+
+            Matrix world = MatrixIdentity();
+            Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
+            Matrix proj = MatrixOrtho(-1.1f, 1.1f, -1.1f, 1.1f, 0.1f, 100.f);
+            Matrix mvp = world * view * proj;
+
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
+            glBindVertexArray(vao_line);
+            glDrawArrays(GL_LINES, 0, line_vertex_count);
+
+            break;
+        }
+        case 1:
             glUseProgram(a1_tri_shader);
 
 			//world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
@@ -188,7 +274,7 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 3);           
 
             break;
-        case 1:
+        case 2:
 			glPointSize(10);
             glUseProgram(a1_tri_shader);
             world = MatrixIdentity();
@@ -198,7 +284,7 @@ int main()
             glBindVertexArray(vertex_array_white);
             glDrawArrays(GL_POINTS, 0, 3);
             break;
-        case 2:
+        case 3:
             glUseProgram(a1_tri_shader);
             world = MatrixScale(2.f, 2.f, 2.f);
             mvp = world * view * proj;
@@ -207,7 +293,7 @@ int main()
             glBindVertexArray(vertex_array_rainbow);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
-        case 3:
+        case 4:
         {
             glUseProgram(a1_tri_shader);
 
@@ -254,7 +340,7 @@ int main()
 
             break;
         }
-        case 4:
+        case 5:
         {
 
             glUseProgram(a1_tri_shader);
