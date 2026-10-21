@@ -72,29 +72,7 @@ static const int square_count = 18;
 static const int square_vertex_count = square_count * line_vertex_count; // 6 vertices per square (2 triangles)
 
 int main()
-{
-   
-    // Calculates new vertices of nested squares based on the midpoints
-    Vector2 square_vertex_positions[square_vertex_count];
-    for (int i = 0; i < line_vertex_count; i++)
-    {
-        square_vertex_positions[i] = line_vertex_positions[i];
-    }
-    
-
-    for (int s = 1; s < square_count; s++)
-    {
-        const Vector2* prev = square_vertex_positions + (s - 1) * line_vertex_count;
-        Vector2* curr = square_vertex_positions + s * line_vertex_count;
-        for (int e = 0; e < 4; e++)
-        {
-            int next = (e + 1) % 4;
-            curr[e * 2 + 0] = Vector2Lerp(prev[e * 2], prev[e * 2 + 1], 0.5f);
-            curr[e * 2 + 1] = Vector2Lerp(prev[next * 2], prev[next * 2 + 1], 0.5f);
-        }
-    }
-
-        
+{        
     
     Vector2 line_vertex_positions2[8];
 	line_vertex_positions2[0] = Vector2Lerp(line_vertex_positions[0], line_vertex_positions[1], 0.5f);
@@ -170,6 +148,28 @@ int main()
     glBindVertexArray(GL_NONE);
 
 
+	///// template for line rendering
+
+    // Calculates new vertices of nested squares based on the midpoints
+    Vector2 square_vertex_positions[square_vertex_count];
+    for (int i = 0; i < line_vertex_count; i++)
+    {
+        square_vertex_positions[i] = line_vertex_positions[i];
+    }
+
+
+    for (int s = 1; s < square_count; s++)
+    {
+        const Vector2* prev = square_vertex_positions + (s - 1) * line_vertex_count;
+        Vector2* curr = square_vertex_positions + s * line_vertex_count;
+        for (int e = 0; e < 4; e++)
+        {
+            int next = (e + 1) % 4;
+            curr[e * 2 + 0] = Vector2Lerp(prev[e * 2], prev[e * 2 + 1], 0.5f);
+            curr[e * 2 + 1] = Vector2Lerp(prev[next * 2], prev[next * 2 + 1], 0.5f);
+        }
+    }
+
 
     GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
     GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
@@ -179,6 +179,7 @@ int main()
     BindVertexBuffer(vbo_line_positions);
     UpdateVertexBuffer(vbo_line_positions, (void*)square_vertex_positions, sizeof(square_vertex_positions));
     UnbindVertexBuffer();
+    
 
     GLuint vao_line = GenVertexArray();
     BindVertexArray(vao_line);
@@ -290,15 +291,29 @@ int main()
             break;
         }
         case 1:
-            glUseProgram(a1_tri_shader);
-
-			//world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
             mvp = world * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
-            glBindVertexArray(vertex_array_white);
-            glDrawArrays(GL_TRIANGLES, 0, 3);           
 
+
+            BindVertexArray(vertex_array_white);
+            BeginShader(a1_tri_shader);
+            {
+                SendMat4(mvp, "u_mvp");
+                SendVec3(Vector3UnitX, "u_color");
+                glDrawArrays(GL_TRIANGLES, 0, 3);
+            }
+            EndShader();
+            UnbindVertexArray();
+
+            //glUseProgram(a1_tri_shader);
+
+            //GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+            //glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+            //GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
+            //glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
+
+            //glBindVertexArray(vertex_array_white);
+            //glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
         case 2:
 			glPointSize(10);
