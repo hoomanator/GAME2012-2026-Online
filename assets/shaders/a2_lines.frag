@@ -1,6 +1,6 @@
-#version 330 core
-out vec4 fragColor;
+#version 330
 in vec3 color;
+out vec4 fragColor;
 
 uniform vec3 u_color;
 

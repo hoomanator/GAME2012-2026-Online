@@ -1,7 +1,7 @@
-#version 330 core
+#version 330
 layout (location = 0) in vec2 vPos;
 
-uniform mat4 u_mvp;
+uniform mat4 u_mvp;     // world * view * proj
 
 void main()
 {

@@ -1,6 +1,7 @@
 #include "Window.h"
 #include "Shader.h"
 #include "Buffer.h"
+#include "Mesh.h"
 #include "imgui/imgui.h"
 #include "raymath.h"
 #include <cstddef>
@@ -190,6 +191,15 @@ int main()
 
     UnbindVertexArray();
     UnbindVertexBuffer();
+
+
+	/////////////////////////////// Create a mesh from an obj file or from a shape type //////////////////////////////
+
+
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     int object_index = 0;
