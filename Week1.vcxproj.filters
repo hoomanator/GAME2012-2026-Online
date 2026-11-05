@@ -131,5 +131,18 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="assets\shaders\a1_time.frag" />
+    <None Include="assets\shaders\a1_white.frag" />
+    <None Include="assets\shaders\buffer_color.vert" />
+    <None Include="assets\shaders\default.vert" />
+    <None Include="assets\shaders\lines.frag" />
+    <None Include="assets\shaders\lines.vert" />
+    <None Include="assets\shaders\normal_color.frag" />
+    <None Include="assets\shaders\points.vert" />
+    <None Include="assets\shaders\tcoord_color.frag" />
+    <None Include="assets\shaders\texture_color.frag" />
+    <None Include="assets\shaders\uniform_color.frag" />
+    <None Include="assets\shaders\vertex_color.frag" />
+    <None Include="assets\shaders\vertex_color.vert" />
   </ItemGroup>
 </Project>

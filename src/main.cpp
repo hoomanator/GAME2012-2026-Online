@@ -95,9 +95,48 @@ int main()
     CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 7");
 
 
+	/////////////// Create shader programs //////////////////////////////
+
     GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
     GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
     GLuint a1_tri_shader = CreateProgram(a1_tri_vert, a1_tri_frag);
+
+    GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
+    GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
+    GLuint a2_lines_shader = CreateProgram(a2_lines_vert, a2_lines_frag);
+
+    // Vertex shaders:
+    GLuint vs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/default.vert");
+    GLuint vsLines = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/lines.vert");
+    GLuint vsVertexPositionColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
+    GLuint vsColorBufferColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/buffer_color.vert");
+
+    // Fragment shaders:
+    GLuint fsLines = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/lines.frag");
+    GLuint fsUniformColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/uniform_color.frag");
+    GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
+    GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
+    GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
+
+    // Shader programs:
+    GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
+    GLuint shaderVertexPositionColor = CreateProgram(vsVertexPositionColor, fsVertexColor);
+    GLuint shaderVertexBufferColor = CreateProgram(vsColorBufferColor, fsVertexColor);
+    GLuint shaderLines = CreateProgram(vsLines, fsLines);
+    GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
+    GLuint shaderNormals = CreateProgram(vs, fsNormals);
+
+    // Add the triangle shaders
+    GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
+    GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
+    GLuint shaderTriangle = CreateProgram(triangleVs, triangleFs);
+
+    // Add point shader
+    GLuint vsPoints = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/points.vert");
+    GLuint shaderPoints = CreateProgram(vsPoints, fsVertexColor);
+
+
+    /////////////////////////////////////////////////////////////////////////////
 
 
     GLuint vertex_buffer_rainbow_positions;
@@ -172,10 +211,6 @@ int main()
     }
 
 
-    GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
-    GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
-    GLuint a2_lines_shader = CreateProgram(a2_lines_vert, a2_lines_frag);
-
     GLuint vbo_line_positions = GenVertexBuffer();
     BindVertexBuffer(vbo_line_positions);
     UpdateVertexBuffer(vbo_line_positions, (void*)square_vertex_positions, sizeof(square_vertex_positions));
@@ -195,7 +230,21 @@ int main()
 
 	/////////////////////////////// Create a mesh from an obj file or from a shape type //////////////////////////////
 
+    Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, rockMesh, planeMesh, headMesh;
+    
+    CreateMesh(&shapeMesh, PLANE);
+	CreateMesh(&cubeMesh, CUBE);
+    CreateMesh(&sphereMesh, SPHERE);
+	CreateMesh(&knotMesh, KNOT);
+	CreateMesh(&rockMesh, ROCK);
+	CreateMesh(&planeMesh, "./assets/meshes/plane.obj");
+	CreateMesh(&headMesh, "./assets/meshes/head.obj");
 
+
+	glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_EQUAL);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_LINE_SMOOTH);
 
 
 
@@ -244,7 +293,7 @@ int main()
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            ++object_index %= 6;
+            ++object_index %= 7;
         }
 
 		float tt = Time();
@@ -287,7 +336,7 @@ int main()
         {
         case 0:
         {
-			glLineWidth(10.0f);
+			glLineWidth(5.0f);
 			BindVertexArray(vao_line);
 			BeginShader(a2_lines_shader);
             {
@@ -430,6 +479,17 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
         }
+        case 6:
+        {
+            glUseProgram(shaderTcoords);
+            GLint u_mvp = glGetUniformLocation(shaderTcoords, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+			DrawMesh(headMesh);
+            break;
+        }
+
         default:
             break;
         }

@@ -17,7 +17,7 @@
     <ProjectGuid>{45f8f792-6188-46c2-b742-28b26cb9eda0}</ProjectGuid>
     <RootNamespace>Week1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Week7</ProjectName>
+    <ProjectName>Week9</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -49,7 +49,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>./inc</AdditionalIncludeDirectories>
@@ -70,7 +70,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>./inc</AdditionalIncludeDirectories>
@@ -121,10 +121,23 @@
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\shaders\a1_time.frag" />
     <None Include="assets\shaders\a1_triangle.frag" />
     <None Include="assets\shaders\a1_triangle.vert" />
+    <None Include="assets\shaders\a1_white.frag" />
     <None Include="assets\shaders\a2_lines.frag" />
     <None Include="assets\shaders\a2_lines.vert" />
+    <None Include="assets\shaders\buffer_color.vert" />
+    <None Include="assets\shaders\default.vert" />
+    <None Include="assets\shaders\lines.frag" />
+    <None Include="assets\shaders\lines.vert" />
+    <None Include="assets\shaders\normal_color.frag" />
+    <None Include="assets\shaders\points.vert" />
+    <None Include="assets\shaders\tcoord_color.frag" />
+    <None Include="assets\shaders\texture_color.frag" />
+    <None Include="assets\shaders\uniform_color.frag" />
+    <None Include="assets\shaders\vertex_color.frag" />
+    <None Include="assets\shaders\vertex_color.vert" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
