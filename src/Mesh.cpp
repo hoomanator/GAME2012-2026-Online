@@ -93,7 +93,9 @@ void CreateMesh(Mesh* mesh, ShapeType shape)
 		//par = par_shapes_create_rock(int seed, int nsubdivisions)
 		par = par_shapes_create_rock(5, 5);
 		break;
-
+	case TORUS:
+		par = par_shapes_create_torus(30, 40, 0.1);
+		break;
 	default:
 		assert(false && "Invalid shape type");
 		break;
