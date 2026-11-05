@@ -277,7 +277,7 @@ int main()
 	// Create Mesh
 	//An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
 	//git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
-	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, monkeyMesh, torusMesh;
+	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, monkeyMesh, torusMesh, ct4Mesh;
 	CreateMesh(&shapeMesh, PLANE);
 	CreateMesh(&cubeMesh, CUBE);
 	CreateMesh(&sphereMesh, SPHERE);
@@ -287,6 +287,7 @@ int main()
 	CreateMesh(&headMesh, "assets/meshes/head.obj");
 	CreateMesh(&monkeyMesh, "assets/meshes/monkey.obj");
 	CreateMesh(&torusMesh, TORUS);
+	CreateMesh(&ct4Mesh, "assets/meshes/ct4.obj");
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -538,7 +539,7 @@ int main()
 			Matrix mvp2 = world2 * view * proj;
 			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			DrawMesh(headMesh);
+			DrawMesh(ct4Mesh);
 			break;
 		}
 
