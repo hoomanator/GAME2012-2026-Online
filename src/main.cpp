@@ -3,6 +3,9 @@
 #include "Buffer.h"
 #include "Mesh.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "raymath.h"
 #include <imgui/imgui.h>
 #include <cstddef>
@@ -83,6 +86,14 @@ struct Line
 	Vector2 end;
 };
 
+struct Pixel
+{
+	stbi_uc r = 255;
+	stbi_uc g = 255;
+	stbi_uc b = 255;
+	stbi_uc a = 255;
+};
+
 
 int main()
 {
@@ -105,7 +116,7 @@ int main()
 	}
 
 
-	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 9");
+	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 10 - Textures");
 
 
 	//shaders
@@ -132,6 +143,8 @@ int main()
 	GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
 	GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
 	GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
+	GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
+	GLuint fsTextureMix = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texturemix_color.frag");
 
 	// Shader programs:
 	GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
@@ -140,6 +153,8 @@ int main()
 	GLuint shaderLines = CreateProgram(vsLines, fsLines);
 	GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
 	GLuint shaderNormals = CreateProgram(vs, fsNormals);
+	GLuint shaderTexture = CreateProgram(vs, fsTexture);
+	GLuint shaderTextureMix = CreateProgram(vs, fsTextureMix);
 
 	// Add the triangle shaders
 	GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
@@ -272,12 +287,88 @@ int main()
 	glBindVertexArray(GL_NONE);
 	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);*/
 
+	//////////////////////////// Create Textures & Load texture to GPU ///////
+
+	stbi_set_flip_vertically_on_load(true); // Flip the image vertically when loading, because OpenGL expects the 0.0 coordinate on the y-axis to be at the bottom of the image)
+
+	int carWidth, carHeight, carChannels = 0;
+	stbi_uc* pixelsCar = stbi_load("assets/textures/ct4_grey.png", &carWidth, &carHeight, &carChannels, 0);
+
+	GLuint carTexture = GL_NONE;
+	glGenTextures(1, &carTexture);
+	glBindTexture(GL_TEXTURE_2D, carTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, carWidth, carHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsCar);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, GL_NONE);
+	free(pixelsCar);
+	pixelsCar = nullptr;
+
+	/////////////////////////////////// Head Texture //////////////////////////////////////////
+
+	int headWidth, headHeight, headChannels = 0;
+	stbi_uc* pixelsHead = stbi_load("assets/textures/head.png", &headWidth, &headHeight, &headChannels, 0);
+
+	GLuint headTexture = GL_NONE;
+	glGenTextures(1, &headTexture);
+	glBindTexture(GL_TEXTURE_2D, headTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, headWidth, headHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsHead);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, GL_NONE);
+	free(pixelsHead);
+	pixelsHead = nullptr;
+
+	///////////////////////////////// Gradient Texture ////////////////////////////
+
+	int  texGradientWidth = 256;
+	int  texGradientHeight = 256; 
+	Pixel* pixelsGradient = (Pixel*)malloc(texGradientWidth * texGradientHeight * sizeof(Pixel));
+	for (int y = 0; y < texGradientHeight; y++)
+	{
+		for (int x = 0; x < texGradientWidth; x++)
+		{
+
+			float u = x / (float)(texGradientWidth);
+			float v = y / (float)(texGradientHeight);
+
+			Pixel pixel;
+
+			pixel.r = u * 255.0f;
+			pixel.g = v * 255.0f;
+			pixel.b = 255;
+			pixel.a = 255;
+
+			pixelsGradient[y * texGradientWidth + x] = pixel; 
+		}
+	}
+
+	GLuint texGradient = GL_NONE;
+	glGenTextures(1, &texGradient);
+	glBindTexture(GL_TEXTURE_2D, texGradient);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texGradientWidth, texGradientHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsGradient);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, GL_NONE);
+	free(pixelsGradient);
+	pixelsGradient = nullptr;
+
+
 	////////////////////////////////////////////////////////////////////////////
 
 	// Create Mesh
 	//An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
 	//git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
-	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, monkeyMesh, torusMesh, ct4Mesh;
+	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, monkeyMesh, torusMesh, ct4Mesh, dynoMesh;
 	CreateMesh(&shapeMesh, PLANE);
 	CreateMesh(&cubeMesh, CUBE);
 	CreateMesh(&sphereMesh, SPHERE);
@@ -288,6 +379,7 @@ int main()
 	CreateMesh(&monkeyMesh, "assets/meshes/monkey.obj");
 	CreateMesh(&torusMesh, TORUS);
 	CreateMesh(&ct4Mesh, "assets/meshes/ct4.obj");
+	CreateMesh(&dynoMesh, "assets/meshes/dynotex.obj");
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -392,117 +484,76 @@ int main()
 
 		case 1:
 		{
-			/*glUseProgram(shaderLines);
-			GLint u_color = glGetUniformLocation(shaderLines, "u_color");
-			GLint u_mvp = glGetUniformLocation(shaderLines, "u_mvp");
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-			glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-			glBindVertexArray(vao_lines);
-			glDrawArrays(GL_LINES, 0, SCREEN_WIDTH * 2);*/
-			break;
+			glUseProgram(shaderTexture);
+
+			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_tex");
+			glUniform1i(u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, headTexture);
+			DrawMesh(headMesh);
+			break;		
 		}
 		case 2:
 		{
-			mvp = world * view * proj;
+			glUseProgram(shaderTexture);
 
+			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			BindVertexArray(vertex_array_white);
-			BeginShader(a1_tri_shader);
-			{
-				SendMat4(mvp, "u_mvp");
-				SendVec3(Vector3UnitX, "u_color");
-				glDrawArrays(GL_TRIANGLES, 0, 3);
-			}
-			EndShader();
-			UnbindVertexArray();
-
-			//glUseProgram(a1_tri_shader);
-
-			//GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
-			//glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-
-			//GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-			//glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
-
-			//glBindVertexArray(vertex_array_white);
-			//glDrawArrays(GL_TRIANGLES, 0, 3);
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_tex");
+			glUniform1i(u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texGradient);
+			DrawMesh(headMesh);
 			break;
 		}
 		case 3:
 		{
-			Matrix s = MatrixIdentity();
-			Matrix r = MatrixIdentity();
-			Matrix t = MatrixIdentity();
-			// Matrix view = MatrixLookAt({ 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 0.0f }, Vector3UnitY);
-			// Matrix proj = MatrixOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f);
+			glUseProgram(shaderTextureMix);
 
-			float time = Time();
-			float a = cosf(time) * 0.5 + 0.5f;
-			Vector3 A = { -1.0f, -1.0f, 0.0f };
-			Vector3 B = { 1.0f, 1.0f, 0.0f };
-			Vector3 C = Vector3Lerp(A, B, a);
-			t = MatrixTranslate(C.x, C.y, C.z);
+			GLint u_mvp = glGetUniformLocation(shaderTextureMix, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-			GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+			GLint u_texture1 = glGetUniformLocation(shaderTextureMix, "u_tex1");
+			glUniform1i(u_texture1, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texGradient);
 
-			world = s * r * t;
-			mvp = world * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+			GLint u_texture2 = glGetUniformLocation(shaderTextureMix, "u_tex2");
+			glUniform1i(u_texture2, 1);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, headTexture);
 
-			glUseProgram(a1_tri_shader);
-			glUniform3f(u_color, 0.8, 0.8f, 0.8f);
-			glBindVertexArray(vertex_array_rainbow);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			DrawMesh(headMesh);
 			break;
 		}
 
 		case 4:
 		{
-			GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-			GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+			glUseProgram(shaderTexture);
 
-			float time = Time();
-			float a = cosf(time) * 0.5 + 0.5f;
+			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			//Translation interpolation
-			Vector3 tA = { 0.0f, -10.0f, 0.0f };
-			Vector3 tB = { 0.0f, 10.0f, 0.0f };
-			Vector3 tC = Vector3Lerp(tA, tB, a);
-
-			//Scale interpolation
-			Vector3 sA = { 1.0f, 1.0f, 1.0f };
-			Vector3 sB = { 10.0f, 10.0f, 1.0f };
-			Vector3 sC = Vector3Lerp(sA, sB, a);
-
-			//Spherical Lerp because we interpolate between two quaternions (rotations) instead of two vectors (positions)
-			Quaternion qA = QuaternionIdentity();
-			Quaternion qB = QuaternionFromEuler(0.0f, 0.0f, 90.0f * DEG2RAD);
-			Quaternion qC = QuaternionSlerp(qA, qB, a);
-
-			Matrix s = MatrixScale(sC.x, sC.y, sC.z);
-			Matrix r = QuaternionToMatrix(qC);
-			Matrix t = MatrixTranslate(tC.x, tC.y, tC.z);
-
-			//Color interpolation
-			Vector3 cA = Vector3UnitY;  //Green
-			Vector3 cB = Vector3UnitZ; //Blue 
-			Vector3 cC = Vector3Lerp(cA, cB, a);
-
-
-
-			Matrix mvp = s * r * t * view * proj;
-
-			glUseProgram(a1_tri_shader);
-			glUniform3f(u_color, 0.5, 0.5f, 0.5f);
-
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-			glUniform3f(u_color, cC.x, cC.y, cC.z);
-
-			glBindVertexArray(vertex_array_rainbow);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_tex");
+			glUniform1i(u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texGradient);
+			DrawMesh(headMesh);
 			break;
 		}
+		
 		case 5:
 		{
 			glUseProgram(shaderTcoords);
@@ -532,13 +583,17 @@ int main()
 
 		case 7:
 		{
-			glUseProgram(shaderNormals);
+			glUseProgram(shaderTexture);
 
-			GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
+			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
 			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
 			Matrix mvp2 = world2 * view * proj;
 			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_texture");
+			glUniform1i(u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, carTexture);
 			DrawMesh(ct4Mesh);
 			break;
 		}
@@ -556,12 +611,18 @@ int main()
 
 		case 9:
 		{
-			glUseProgram(shaderNormals);
+			glUseProgram(shaderTexture);
 
-			GLint u_mvp = glGetUniformLocation(shaderTcoords, "u_mvp");
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
+			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			DrawMesh(rockMesh);
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_texture");
+			glUniform1i(u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, carTexture);
+			DrawMesh(dynoMesh);
 			break;
 		}
 
@@ -569,8 +630,8 @@ int main()
 
 		// Write our widget code within begin/end gui loop!
 		BeginGui();
-		ImGui::RadioButton("Orthographic", &projection_type, PERSPECTIVE); ImGui::SameLine();
-		ImGui::RadioButton("Perspective", &projection_type, ORTHOGRAPHIC);
+		ImGui::RadioButton("Orthographic", &projection_type, ORTHOGRAPHIC); ImGui::SameLine();
+		ImGui::RadioButton("Perspective", &projection_type, PERSPECTIVE);
 
 		ImGui::Checkbox("Translate", &obj_translate);
 		ImGui::Checkbox("Rotate", &obj_rotate);

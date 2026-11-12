@@ -17,7 +17,7 @@
     <ProjectGuid>{45f8f792-6188-46c2-b742-28b26cb9eda0}</ProjectGuid>
     <RootNamespace>Week1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Week9</ProjectName>
+    <ProjectName>Week10</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -118,6 +118,7 @@
     <ClInclude Include="src\par_shapes.h" />
     <ClInclude Include="src\raymath.h" />
     <ClInclude Include="src\Shader.h" />
+    <ClInclude Include="src\stb_image.h" />
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -134,6 +135,7 @@
     <None Include="assets\shaders\normal_color.frag" />
     <None Include="assets\shaders\points.vert" />
     <None Include="assets\shaders\tcoord_color.frag" />
+    <None Include="assets\shaders\texturemix_color.frag" />
     <None Include="assets\shaders\texture_color.frag" />
     <None Include="assets\shaders\uniform_color.frag" />
     <None Include="assets\shaders\vertex_color.frag" />

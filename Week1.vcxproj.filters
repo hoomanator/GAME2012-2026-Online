@@ -116,6 +116,9 @@
     <ClInclude Include="src\fast_obj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\a1_triangle.frag">
@@ -144,5 +147,6 @@
     <None Include="assets\shaders\uniform_color.frag" />
     <None Include="assets\shaders\vertex_color.frag" />
     <None Include="assets\shaders\vertex_color.vert" />
+    <None Include="assets\shaders\texturemix_color.frag" />
   </ItemGroup>
 </Project>
