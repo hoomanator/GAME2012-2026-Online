@@ -148,5 +148,7 @@
     <None Include="assets\shaders\vertex_color.frag" />
     <None Include="assets\shaders\vertex_color.vert" />
     <None Include="assets\shaders\texturemix_color.frag" />
+    <None Include="assets\shaders\skybox.vert" />
+    <None Include="assets\shaders\skybox.frag" />
   </ItemGroup>
 </Project>
