@@ -116,7 +116,7 @@ int main()
 	}
 
 
-	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 10 - Textures");
+	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 11 - Skybox");
 
 
 	//shaders
@@ -136,6 +136,7 @@ int main()
 	GLuint vsLines = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/lines.vert");
 	GLuint vsVertexPositionColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
 	GLuint vsColorBufferColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/buffer_color.vert");
+	GLuint vsSkybox = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/skybox.vert");
 
 	// Fragment shaders:
 	GLuint fsLines = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/lines.frag");
@@ -145,6 +146,7 @@ int main()
 	GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
 	GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
 	GLuint fsTextureMix = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texturemix_color.frag");
+	GLuint fsSkybox = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/skybox.frag");
 
 	// Shader programs:
 	GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
@@ -155,6 +157,7 @@ int main()
 	GLuint shaderNormals = CreateProgram(vs, fsNormals);
 	GLuint shaderTexture = CreateProgram(vs, fsTexture);
 	GLuint shaderTextureMix = CreateProgram(vs, fsTextureMix);
+	GLuint shaderSkybox = CreateProgram(vsSkybox, fsSkybox);
 
 	// Add the triangle shaders
 	GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
@@ -363,6 +366,55 @@ int main()
 	pixelsGradient = nullptr;
 
 
+	///// skybox texture
+	/*const char* skyboxFaces[6] =
+	{
+		"./assets/textures/skybox/sky_x+.png",
+		"./assets/textures/skybox/sky_x-.png",
+		"./assets/textures/skybox/sky_y+.png",
+		"./assets/textures/skybox/sky_y-.png",
+		"./assets/textures/skybox/sky_z+.png",
+		"./assets/textures/skybox/sky_z-.png"
+	};*/
+
+	const char* skyboxFaces[6] =
+	{
+		"./assets/textures/iceriver/posx.bmp",
+		"./assets/textures/iceriver/negx.bmp",
+		"./assets/textures/iceriver/posy.bmp",
+		"./assets/textures/iceriver/negy.bmp",
+		"./assets/textures/iceriver/posz.bmp",
+		"./assets/textures/iceriver/negz.bmp"
+	};
+
+	GLuint skyboxTexture = GL_NONE;
+	glGenTextures(1, &skyboxTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	stbi_set_flip_vertically_on_load(false);
+	for (int i = 0; i < 6; i++)
+	{
+		int width, height, channels;
+		stbi_uc* pixels = stbi_load(skyboxFaces[i], &width, &height, &channels, 0);
+		if (pixels)
+		{
+			int format = (channels == 3) ? GL_RGB : GL_RGBA;
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
+			stbi_image_free(pixels);
+		}
+		else
+		{
+			printf("Failed to load skybox texture: %s\n", skyboxFaces[i]);
+		}
+	}
+	// Restore flipping only AFTER all 6 cubemap faces are loaded
+	stbi_set_flip_vertically_on_load(true);
+
+
 	////////////////////////////////////////////////////////////////////////////
 
 	// Create Mesh
@@ -390,7 +442,7 @@ int main()
 	//////////////////////////////////////////////////////////////////////
 
 
-	int object_index = 5;
+	int object_index = 0;
 	int projection_type = ORTHOGRAPHIC;
 
 	float aspect = (float)WindowWidth() / (float)WindowHeight();
@@ -406,6 +458,14 @@ int main()
 	bool obj_translate = false;
 	bool obj_rotate = false;
 	bool obj_scale = false;
+
+	Vector3 cameraPosition = { 0.f, 0.f, 3.f };
+
+	// Mouse-look camera (hold RIGHT mouse button and drag to look around)
+	float cameraYaw = -90.0f * DEG2RAD;	// -90 degrees = looking down -Z
+	float cameraPitch = 0.0f;
+	float mouseSensitivity = 0.003f;	// radians per pixel
+	float cameraMoveSpeed = 3.0f;		// units per second
 
 	/* Loop until the user closes the window */
 	while (!WindowShouldClose())
@@ -446,7 +506,42 @@ int main()
 			world = MatrixScale(cosf(tt) * 0.4f + 0.5f, cosf(tt) * 0.4f + 0.5f, 1.f);
 		}
 
-		Matrix view = MatrixLookAt({ 0.f, 0.f, 10.f }, { 0.f, 0.f, 0.f }, Vector3UnitY);
+		// Mouse look: use ImGui's mouse state (ignored while the mouse is over an ImGui window)
+		ImGuiIO& io = ImGui::GetIO();
+		if (!io.WantCaptureMouse && ImGui::IsMouseDown(ImGuiMouseButton_Right))
+		{
+			cameraYaw += io.MouseDelta.x * mouseSensitivity;
+			cameraPitch -= io.MouseDelta.y * mouseSensitivity;
+
+			// Clamp pitch so the camera can't flip over the top/bottom
+			const float maxPitch = 89.0f * DEG2RAD;
+			if (cameraPitch > maxPitch) cameraPitch = maxPitch;
+			if (cameraPitch < -maxPitch) cameraPitch = -maxPitch;
+		}
+
+		Vector3 cameraForward =
+		{
+			cosf(cameraPitch) * cosf(cameraYaw),
+			sinf(cameraPitch),
+			cosf(cameraPitch) * sinf(cameraYaw)
+		};
+
+		// WASD movement relative to where the camera is looking (Q/E = down/up, hold Shift = faster)
+		if (!io.WantCaptureKeyboard)
+		{
+			Vector3 cameraRight = Vector3Normalize(Vector3CrossProduct(cameraForward, Vector3UnitY));
+			float speed = cameraMoveSpeed * io.DeltaTime;
+			if (IsKeyDown(KEY_LEFT_SHIFT)) speed *= 3.0f;
+
+			if (IsKeyDown(KEY_W)) cameraPosition += cameraForward * speed;
+			if (IsKeyDown(KEY_S)) cameraPosition -= cameraForward * speed;
+			if (IsKeyDown(KEY_D)) cameraPosition += cameraRight * speed;
+			if (IsKeyDown(KEY_A)) cameraPosition -= cameraRight * speed;
+			if (IsKeyDown(KEY_E)) cameraPosition += Vector3UnitY * speed;
+			if (IsKeyDown(KEY_Q)) cameraPosition -= Vector3UnitY * speed;
+		}
+
+		Matrix view = MatrixLookAt(cameraPosition, cameraPosition + cameraForward, Vector3UnitY);
 
 		Matrix proj = MatrixIdentity();
 		switch (projection_type)
@@ -469,19 +564,31 @@ int main()
 		switch (object_index)
 		{
 		case 0:
-			glLineWidth(5.0f);
-			BindVertexArray(vao_line);
-			BeginShader(a2_lines_shader);
-			{
-				SendMat4(mvp, "u_mvp");
-				SendVec3(Vector3UnitX, "u_color");
-				glDrawArrays(GL_LINES, 0, square_vertex_count);
-			}
-			EndShader();
-			UnbindVertexArray();
-			//glLineWidth(1.0f);
-			break;
+		{
+			glUseProgram(shaderSkybox);
+			GLint u_mvp = glGetUniformLocation(shaderSkybox, "u_mvp");
+			Matrix world2 = MatrixIdentity(); // static skybox (no spinning)
 
+			Matrix viewSky = view;
+			viewSky.m12 = viewSky.m13 = viewSky.m14 = 0.0f;
+
+			// Skybox needs a perspective projection (orthographic flattens it into a single face)
+			Matrix projSky = MatrixPerspective(fov, aspect, near, far);
+
+			// Use the translation-free view so the skybox stays centered on the camera
+			Matrix mvp2 = world2 * viewSky * projSky;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+
+			GLint u_cubemap = glGetUniformLocation(shaderSkybox, "u_cubemap");
+			glUniform1i(u_cubemap, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+			glDepthMask(GL_FALSE); // Disable depth writing for skybox
+			DrawMesh(cubeMesh);
+			glDepthMask(GL_TRUE);
+
+			break;
+		}
 		case 1:
 		{
 			glUseProgram(shaderTexture);
@@ -632,6 +739,17 @@ int main()
 		BeginGui();
 		ImGui::RadioButton("Orthographic", &projection_type, ORTHOGRAPHIC); ImGui::SameLine();
 		ImGui::RadioButton("Perspective", &projection_type, PERSPECTIVE);
+
+		ImGui::SliderFloat3("Camera Position", &cameraPosition.x, -10.0f, 10.0f);
+		ImGui::Text("Hold right mouse button + drag to look around");
+		ImGui::Text("WASD = move, Q/E = down/up, Shift = faster");
+		ImGui::SliderFloat("Move Speed", &cameraMoveSpeed, 0.5f, 20.0f);
+		if (ImGui::Button("Reset Camera"))
+		{
+			cameraPosition = { 0.f, 0.f, 3.f };
+			cameraYaw = -90.0f * DEG2RAD;
+			cameraPitch = 0.0f;
+		}
 
 		ImGui::Checkbox("Translate", &obj_translate);
 		ImGui::Checkbox("Rotate", &obj_rotate);
