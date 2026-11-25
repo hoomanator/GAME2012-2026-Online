@@ -48,13 +48,6 @@ static const Vertex vertices_white[3] =
 	{ { 0.f,  0.6f },{ 1.0f, 1.0f, 1.0f } }
 };
 
-// Assignment 1 object 2 -- rainbow triangle (done for you)
-//static const Vertex vertices_rainbow[3] =
-//{
-//    { { -0.6f, -0.4f }, { 1.0f, 0.0f, 0.0f } },
-//    { {  0.6f, -0.4f }, { 0.0f, 1.0f, 0.0f } },
-//    { {   0.f,  0.6f }, { 0.0f, 0.0f, 1.0f } }
-//};
 
 static const Vector2 vertex_positions[3] =
 {
@@ -251,7 +244,7 @@ int main()
 
 		lines[i].start.y = start_y(rng);
 		lines[i].end.y = end_y(rng);
-		printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
+		//printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
 	}
 
 	std::vector<Vector3> linesColor(SCREEN_WIDTH * 2);
@@ -260,35 +253,6 @@ int main()
 		linesColor[i] = Vector3{ col_r(rng), col_r(rng), col_r(rng) };
 	}
 
-
-
-
-	/*GLuint vbo_lines;
-	glGenBuffers(1, &vbo_lines);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_lines);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(lines) * SCREEN_WIDTH, lines.data(), GL_STATIC_DRAW);
-
-
-	GLuint cbo_lines;
-	glGenBuffers(1, &cbo_lines);
-	glBindBuffer(GL_ARRAY_BUFFER, cbo_lines);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(linesColor) * SCREEN_WIDTH, linesColor.data(), GL_STATIC_DRAW);
-
-
-	GLuint vao_lines;
-	glGenVertexArrays(1, &vao_lines);
-	glBindVertexArray(vao_lines);
-
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_lines);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), 0);
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, cbo_lines);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
-
-	glBindVertexArray(GL_NONE);
-	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);*/
 
 	//////////////////////////// Create Textures & Load texture to GPU ///////
 
@@ -331,7 +295,7 @@ int main()
 	///////////////////////////////// Gradient Texture ////////////////////////////
 
 	int  texGradientWidth = 256;
-	int  texGradientHeight = 256; 
+	int  texGradientHeight = 256;
 	Pixel* pixelsGradient = (Pixel*)malloc(texGradientWidth * texGradientHeight * sizeof(Pixel));
 	for (int y = 0; y < texGradientHeight; y++)
 	{
@@ -348,7 +312,7 @@ int main()
 			pixel.b = 255;
 			pixel.a = 255;
 
-			pixelsGradient[y * texGradientWidth + x] = pixel; 
+			pixelsGradient[y * texGradientWidth + x] = pixel;
 		}
 	}
 
@@ -420,7 +384,7 @@ int main()
 	// Create Mesh
 	//An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
 	//git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
-	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, monkeyMesh, torusMesh, ct4Mesh, dynoMesh;
+	Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh, headMesh, rockMesh, torusMesh, ct4Mesh, dynoMesh;
 	CreateMesh(&shapeMesh, PLANE);
 	CreateMesh(&cubeMesh, CUBE);
 	CreateMesh(&sphereMesh, SPHERE);
@@ -428,7 +392,6 @@ int main()
 	CreateMesh(&rockMesh, ROCK);
 	CreateMesh(&planeMesh, "assets/meshes/plane.obj");
 	CreateMesh(&headMesh, "assets/meshes/head.obj");
-	CreateMesh(&monkeyMesh, "assets/meshes/monkey.obj");
 	CreateMesh(&torusMesh, TORUS);
 	CreateMesh(&ct4Mesh, "assets/meshes/ct4.obj");
 	CreateMesh(&dynoMesh, "assets/meshes/dynotex.obj");
@@ -603,7 +566,7 @@ int main()
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, headTexture);
 			DrawMesh(headMesh);
-			break;		
+			break;
 		}
 		case 2:
 		{
@@ -660,15 +623,16 @@ int main()
 			DrawMesh(headMesh);
 			break;
 		}
-		
+
 		case 5:
 		{
 			glUseProgram(shaderTcoords);
 
 			GLint u_mvp = glGetUniformLocation(shaderTcoords, "u_mvp");
-			//Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-			//Matrix mvp2 = world2 * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+			// Torus is ~1.1 units in radius, so shrink it to fit and tilt/spin it to show its shape
+			Matrix world2 = MatrixScale(0.8f, 0.8f, 0.8f) * MatrixRotateX(60.0f * DEG2RAD) * MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
 			DrawMesh(torusMesh);
 			break;
@@ -693,11 +657,12 @@ int main()
 			glUseProgram(shaderTexture);
 
 			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			// Car is 2.5 units long and sits on y = 0..0.75, so center it and scale it to fit the view
+			Matrix world2 = MatrixTranslate(0.0f, -0.375f, 0.0f) * MatrixScale(0.8f, 0.8f, 0.8f) * MatrixRotateY(100.0f * tt * DEG2RAD);
 			Matrix mvp2 = world2 * view * proj;
 			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			GLint u_texture = glGetUniformLocation(shaderTexture, "u_texture");
+			GLint u_texture = glGetUniformLocation(shaderTexture, "u_tex");
 			glUniform1i(u_texture, 0);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, carTexture);
@@ -709,8 +674,11 @@ int main()
 		{
 			glUseProgram(shaderNormals);
 
-			GLint u_mvp = glGetUniformLocation(shaderTcoords, "u_mvp");
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+			GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
+			// Trefoil knot was generated with radius 2, so shrink it to fit the view
+			Matrix world2 = MatrixScale(0.6f, 0.6f, 0.6f) * MatrixRotateY(100.0f * tt * DEG2RAD);
+			Matrix mvp2 = world2 * view * proj;
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
 			DrawMesh(knotMesh);
 			break;
@@ -718,17 +686,15 @@ int main()
 
 		case 9:
 		{
-			glUseProgram(shaderTexture);
+			// No dino texture exists in assets/, so shade it by its normals instead of borrowing the car texture
+			glUseProgram(shaderNormals);
 
-			GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-			Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+			GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
+			// Dino spans x -0.48..0.77, y -0.03..0.93, z -1.75..0.84, so center it and scale it to fit
+			Matrix world2 = MatrixTranslate(-0.15f, -0.45f, 0.45f) * MatrixScale(0.6f, 0.6f, 0.6f) * MatrixRotateY(100.0f * tt * DEG2RAD);
 			Matrix mvp2 = world2 * view * proj;
 			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-			GLint u_texture = glGetUniformLocation(shaderTexture, "u_texture");
-			glUniform1i(u_texture, 0);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, carTexture);
 			DrawMesh(dynoMesh);
 			break;
 		}
