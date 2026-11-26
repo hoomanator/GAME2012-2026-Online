@@ -150,5 +150,7 @@
     <None Include="assets\shaders\texturemix_color.frag" />
     <None Include="assets\shaders\skybox.vert" />
     <None Include="assets\shaders\skybox.frag" />
+    <None Include="assets\shaders\phong.frag" />
+    <None Include="assets\shaders\phong2.frag" />
   </ItemGroup>
 </Project>

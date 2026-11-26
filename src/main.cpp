@@ -109,7 +109,7 @@ int main()
 	}
 
 
-	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 11 - Skybox");
+	CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week 12 - Lighting");
 
 
 	//shaders
@@ -140,6 +140,8 @@ int main()
 	GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
 	GLuint fsTextureMix = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texturemix_color.frag");
 	GLuint fsSkybox = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/skybox.frag");
+	GLuint fsPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong.frag");
+	GLuint fsPhong2 = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong2.frag");
 
 	// Shader programs:
 	GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
@@ -151,6 +153,8 @@ int main()
 	GLuint shaderTexture = CreateProgram(vs, fsTexture);
 	GLuint shaderTextureMix = CreateProgram(vs, fsTextureMix);
 	GLuint shaderSkybox = CreateProgram(vsSkybox, fsSkybox);
+	GLuint shaderPhong = CreateProgram(vs, fsPhong);
+	GLuint shaderPhong2 = CreateProgram(vs, fsPhong2);
 
 	// Add the triangle shaders
 	GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
@@ -395,6 +399,20 @@ int main()
 	CreateMesh(&torusMesh, TORUS);
 	CreateMesh(&ct4Mesh, "assets/meshes/ct4.obj");
 	CreateMesh(&dynoMesh, "assets/meshes/dynotex.obj");
+
+
+	//////////////////Lighting///////////////////////////
+	Vector3 lightPositionDir = { 10.0f, 10.0f, 10.0f };
+	Vector3 lightColor = { 1.0f, 0.6471f, 0.0f };
+	float lightRadiusDir = 1.0f;
+
+	Vector3 lightPosition = { 2.0f, 0.0f, 2.0f };
+	float lightRadius = 1.0f;
+	float ambientFactor = 0.1f;
+	float diffuseFactor = 0.8f;
+	float specularPower = 32.0f;
+
+	/////////////////////////////////////////////
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -672,30 +690,104 @@ int main()
 
 		case 8:
 		{
-			glUseProgram(shaderNormals);
+			glUseProgram(shaderPhong2);
 
-			GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
-			// Trefoil knot was generated with radius 2, so shrink it to fit the view
-			Matrix world2 = MatrixScale(0.6f, 0.6f, 0.6f) * MatrixRotateY(100.0f * tt * DEG2RAD);
-			Matrix mvp2 = world2 * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+			mvp = world * view * proj;
 
-			DrawMesh(knotMesh);
+			GLint u_world = glGetUniformLocation(shaderPhong2, "u_world");
+			glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+			// Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+			// Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
+
+			Matrix normal = MatrixInvert(MatrixTranspose(world));
+			GLint u_normal = glGetUniformLocation(shaderPhong2, "u_normal");
+			glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+			GLint u_mvp = glGetUniformLocation(shaderPhong2, "u_mvp");
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+			GLint u_lightPosition = glGetUniformLocation(shaderPhong2, "u_lightPosition");
+			glUniform3fv(u_lightPosition, 1, (float*)&lightPosition);
+
+			GLint u_lightColor = glGetUniformLocation(shaderPhong2, "u_lightColor");
+			glUniform3fv(u_lightColor, 1, (float*)&lightColor);
+
+			GLint u_lightRadius = glGetUniformLocation(shaderPhong2, "u_lightRadius");
+			glUniform1f(u_lightRadius, lightRadius);
+
+			GLint u_cameraPosition = glGetUniformLocation(shaderPhong2, "u_cameraPosition");
+			glUniform3fv(u_cameraPosition, 1, (float*)&cameraPosition);
+
+			GLint u_ambientFactor = glGetUniformLocation(shaderPhong2, "u_ambientFactor");
+			glUniform1f(u_ambientFactor, ambientFactor);
+
+			GLint u_diffuseFactor = glGetUniformLocation(shaderPhong2, "u_diffuseFactor");
+			glUniform1f(u_diffuseFactor, diffuseFactor);
+
+			GLint u_specularPower = glGetUniformLocation(shaderPhong2, "u_specularPower");
+			glUniform1f(u_specularPower, specularPower);
+
+			DrawMesh(sphereMesh);
 			break;
 		}
 
 		case 9:
 		{
-			// No dino texture exists in assets/, so shade it by its normals instead of borrowing the car texture
-			glUseProgram(shaderNormals);
+			glUseProgram(shaderPhong2);
 
-			GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
-			// Dino spans x -0.48..0.77, y -0.03..0.93, z -1.75..0.84, so center it and scale it to fit
-			Matrix world2 = MatrixTranslate(-0.15f, -0.45f, 0.45f) * MatrixScale(0.6f, 0.6f, 0.6f) * MatrixRotateY(100.0f * tt * DEG2RAD);
+			mvp = world * view * proj;
+
+			GLint u_world = glGetUniformLocation(shaderPhong2, "u_world");
+			glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+			// Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+			// Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
+
+			Matrix normal = MatrixInvert(MatrixTranspose(world));
+			GLint u_normal = glGetUniformLocation(shaderPhong2, "u_normal");
+			glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+			GLint u_mvp = glGetUniformLocation(shaderPhong2, "u_mvp");
+			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+			GLint u_lightPosition = glGetUniformLocation(shaderPhong2, "u_lightPosition");
+			glUniform3fv(u_lightPosition, 1, (float*)&lightPosition);
+
+			GLint u_lightColor = glGetUniformLocation(shaderPhong2, "u_lightColor");
+			glUniform3fv(u_lightColor, 1, (float*)&lightColor);
+
+			GLint u_lightRadius = glGetUniformLocation(shaderPhong2, "u_lightRadius");
+			glUniform1f(u_lightRadius, lightRadius);
+
+			GLint u_cameraPosition = glGetUniformLocation(shaderPhong2, "u_cameraPosition");
+			glUniform3fv(u_cameraPosition, 1, (float*)&cameraPosition);
+
+			GLint u_ambientFactor = glGetUniformLocation(shaderPhong2, "u_ambientFactor");
+			glUniform1f(u_ambientFactor, ambientFactor);
+
+			GLint u_diffuseFactor = glGetUniformLocation(shaderPhong2, "u_diffuseFactor");
+			glUniform1f(u_diffuseFactor, diffuseFactor);
+
+			GLint u_specularPower = glGetUniformLocation(shaderPhong2, "u_specularPower");
+			glUniform1f(u_specularPower, specularPower);
+
+			DrawMesh(sphereMesh);
+
+			//To render our light as a color sphere
+			glUseProgram(shaderUniformColor);
+			Matrix world2 = MatrixScale(lightRadius, lightRadius, lightRadius) * MatrixTranslate(lightPosition.x, lightPosition.y, lightPosition.z);
 			Matrix mvp2 = world2 * view * proj;
 			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-
-			DrawMesh(dynoMesh);
+			normal = MatrixIdentity();
+			GLint u_color = glGetUniformLocation(shaderUniformColor, "u_color");
+			glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
+			GLint u_intensity = glGetUniformLocation(shaderUniformColor, "u_intensity");
+			glUniform1f(u_intensity, 1.0f);
+			//Draw our light as a sphere
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			DrawMesh(sphereMesh);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 		}
 
@@ -729,6 +821,11 @@ int main()
 		ImGui::SliderAngle("FoV", &fov, 5.0f, 175.0f);
 		ImGui::SliderFloat("Near", &near, 0.001f, 1.0f);
 		ImGui::SliderFloat("Far", &far, 1.0f, 1000.0f);
+
+		ImGui::SliderFloat3("Light Color", &lightColor.x, 0.0f, 1.0f);
+		ImGui::SliderFloat3("Orbit Light Position", &lightPosition.x, -10.0f, 10.0f);
+		ImGui::SliderFloat("Orbit Light Radius", &lightRadius, 0.25f, 10.0f);
+
 
 		// Extra practice: add additional widgets such sliders for camera position & camera direction!
 		//ImGui::ShowDemoWindow(nullptr);
