@@ -778,8 +778,9 @@ int main()
 			glUseProgram(shaderUniformColor);
 			Matrix world2 = MatrixScale(lightRadius, lightRadius, lightRadius) * MatrixTranslate(lightPosition.x, lightPosition.y, lightPosition.z);
 			Matrix mvp2 = world2 * view * proj;
-			glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-			normal = MatrixIdentity();
+			// Uniform locations belong to a specific program -- look u_mvp up again for shaderUniformColor
+			GLint u_mvp2 = glGetUniformLocation(shaderUniformColor, "u_mvp");
+			glUniformMatrix4fv(u_mvp2, 1, GL_FALSE, MatrixToFloat(mvp2));
 			GLint u_color = glGetUniformLocation(shaderUniformColor, "u_color");
 			glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
 			GLint u_intensity = glGetUniformLocation(shaderUniformColor, "u_intensity");
